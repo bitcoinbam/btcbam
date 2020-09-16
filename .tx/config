@@ -1,0 +1,7 @@
+[main]
+host = https://www.transifex.com
+
+[bitcoinbam.qt-translation-017x]
+file_filter = src/qt/locale/bitcoinbam_<lang>.ts
+source_file = src/qt/locale/bitcoinbam_en.ts
+source_lang = en

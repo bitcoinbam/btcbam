@@ -1,0 +1,92 @@
+#!/sbin/openrc-run
+
+# backward compatibility for existing gentoo layout 
+#
+if [ -d "/var/lib/bitcoinbam/.bitcoinbam" ]; then
+	BITCOINBAMD_DEFAULT_DATADIR="/var/lib/bitcoinbam/.bitcoinbam"
+else
+	BITCOINBAMD_DEFAULT_DATADIR="/var/lib/bitcoinbamd"
+fi
+
+BITCOINBAMD_CONFIGFILE=${BITCOINBAMD_CONFIGFILE:-/etc/bitcoinbam/bitcoinbam.conf}
+BITCOINBAMD_PIDDIR=${BITCOINBAMD_PIDDIR:-/var/run/bitcoinbamd}
+BITCOINBAMD_PIDFILE=${BITCOINBAMD_PIDFILE:-${BITCOINBAMD_PIDDIR}/bitcoinbamd.pid}
+BITCOINBAMD_DATADIR=${BITCOINBAMD_DATADIR:-${BITCOINBAMD_DEFAULT_DATADIR}}
+BITCOINBAMD_USER=${BITCOINBAMD_USER:-${BITCOINBAM_USER:-bitcoinbam}}
+BITCOINBAMD_GROUP=${BITCOINBAMD_GROUP:-bitcoinbam}
+BITCOINBAMD_BIN=${BITCOINBAMD_BIN:-/usr/bin/bitcoinbamd}
+BITCOINBAMD_NICE=${BITCOINBAMD_NICE:-${NICELEVEL:-0}}
+BITCOINBAMD_OPTS="${BITCOINBAMD_OPTS:-${BITCOINBAM_OPTS}}"
+
+name="BitcoinBam Core Daemon"
+description="BitcoinBam cryptocurrency P2P network daemon"
+
+command="/usr/bin/bitcoinbamd"
+command_args="-pid=\"${BITCOINBAMD_PIDFILE}\" \
+		-conf=\"${BITCOINBAMD_CONFIGFILE}\" \
+		-datadir=\"${BITCOINBAMD_DATADIR}\" \
+		-daemon \
+		${BITCOINBAMD_OPTS}"
+
+required_files="${BITCOINBAMD_CONFIGFILE}"
+start_stop_daemon_args="-u ${BITCOINBAMD_USER} \
+			-N ${BITCOINBAMD_NICE} -w 2000"
+pidfile="${BITCOINBAMD_PIDFILE}"
+
+# The retry schedule to use when stopping the daemon. Could be either
+# a timeout in seconds or multiple signal/timeout pairs (like
+# "SIGKILL/180 SIGTERM/300")
+retry="${BITCOINBAMD_SIGTERM_TIMEOUT}"
+
+depend() {
+	need localmount net
+}
+
+# verify
+# 1) that the datadir exists and is writable (or create it)
+# 2) that a directory for the pid exists and is writable
+# 3) ownership and permissions on the config file
+start_pre() {
+	checkpath \
+	-d \
+	--mode 0750 \
+	--owner "${BITCOINBAMD_USER}:${BITCOINBAMD_GROUP}" \
+	"${BITCOINBAMD_DATADIR}"
+
+	checkpath \
+	-d \
+	--mode 0755 \
+	--owner "${BITCOINBAMD_USER}:${BITCOINBAMD_GROUP}" \
+	"${BITCOINBAMD_PIDDIR}"
+
+	checkpath -f \
+	-o ${BITCOINBAMD_USER}:${BITCOINBAMD_GROUP} \
+	-m 0660 \
+	${BITCOINBAMD_CONFIGFILE}
+
+	checkconfig || return 1
+}
+
+checkconfig()
+{
+	if ! grep -qs '^rpcpassword=' "${BITCOINBAMD_CONFIGFILE}" ; then
+		eerror ""
+		eerror "ERROR: You must set a secure rpcpassword to run bitcoinbamd."
+		eerror "The setting must appear in ${BITCOINBAMD_CONFIGFILE}"
+		eerror ""
+		eerror "This password is security critical to securing wallets "
+		eerror "and must not be the same as the rpcuser setting."
+		eerror "You can generate a suitable random password using the following "
+		eerror "command from the shell:"
+		eerror ""
+		eerror "bash -c 'tr -dc a-zA-Z0-9 < /dev/urandom | head -c32 && echo'"
+		eerror ""
+		eerror "It is recommended that you also set alertnotify so you are "
+		eerror "notified of problems:"
+		eerror ""
+		eerror "ie: alertnotify=echo %%s | mail -s \"BitcoinBam Alert\"" \
+			"admin@foo.com"
+		eerror ""
+		return 1
+	fi
+}

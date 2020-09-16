@@ -1,0 +1,33 @@
+# /etc/conf.d/bitcoinbamd: config file for /etc/init.d/bitcoinbamd
+
+# Config file location
+#BITCOINBAMD_CONFIGFILE="/etc/bitcoinbam/bitcoinbam.conf"
+
+# What directory to write pidfile to?  (created and owned by $BITCOINBAMD_USER)
+#BITCOINBAMD_PIDDIR="/var/run/bitcoinbamd"
+
+# What filename to give the pidfile
+#BITCOINBAMD_PIDFILE="${BITCOINBAMD_PIDDIR}/bitcoinbamd.pid"
+
+# Where to write bitcoinbamd data (be mindful that the blockchain is large)
+#BITCOINBAMD_DATADIR="/var/lib/bitcoinbamd"
+
+# User and group to own bitcoinbamd process
+#BITCOINBAMD_USER="bitcoinbam"
+#BITCOINBAMD_GROUP="bitcoinbam"
+
+# Path to bitcoinbamd executable
+#BITCOINBAMD_BIN="/usr/bin/bitcoinbamd"
+
+# Nice value to run bitcoinbamd under
+#BITCOINBAMD_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+#BITCOINBAMD_OPTS=""
+
+# The timeout in seconds OpenRC will wait for bitcoinbamd to terminate
+# after a SIGTERM has been raised.
+# Note that this will be mapped as argument to start-stop-daemon's
+# '--retry' option, which means you can specify a retry schedule
+# here. For more information see man 8 start-stop-daemon.
+BITCOINBAMD_SIGTERM_TIMEOUT=60
